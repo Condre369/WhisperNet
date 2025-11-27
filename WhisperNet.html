@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhisperNet</title>
+  <style>
+    :root {
+      --bg: #050516;
+      --card-bg: #0b0c21;
+      --border-subtle: rgba(255,255,255,0.04);
+      --text-main: #f5f5f7;
+      --text-subtle: #a0a0b5;
+      --accent-blurple: #5c5fd6;
+      --accent-blurple-soft: rgba(92,95,214,0.2);
+      --accent-gold: #d4b06a;
+      --accent-gold-soft: rgba(212,176,106,0.2);
+    }
+    body {
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background: radial-gradient(circle at top left,#141638 0%,var(--bg) 40%,#050510 100%);
+      color: var(--text-main);
+      margin:0;
+      padding:0;
+    }
+    .container{max-width:980px;margin:0 auto;padding:24px 16px 48px;}
+    h1{font-size:30px;margin-bottom:8px;letter-spacing:0.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+    h1 span.title-main{font-weight:700;}
+    h1 span.title-sub{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-gold);}
+    .badge{margin-left:auto;padding:2px 8px;border-radius:999px;background:var(--accent-blurple-soft);color:#d0ddff;font-size:11px;border:1px solid rgba(92,95,214,0.5);text-transform:uppercase;letter-spacing:0.12em;}
+    p{line-height:1.5;margin:4px 0 12px;color:#c7c7d0;}
+    .small{font-size:12px;color:#8d8da0;}
+    .warning{color:#fbbf24;}
+    .card{
+      background:linear-gradient(145deg,rgba(255,255,255,0.02),rgba(0,0,0,0.7));
+      border-radius:14px;padding:12px 14px;margin-top:16px;
+      box-shadow:0 14px 32px rgba(0,0,0,0.6);
+      border:1px solid var(--border-subtle);
+      backdrop-filter:blur(10px);
+    }
+    .card > details > summary{
+      list-style:none;
+      cursor:pointer;
+    }
+    .card > details > summary::-webkit-details-marker{display:none;}
+    .card > details[open] > summary{margin-bottom:6px;}
+    .card > details > summary h2{
+      display:inline-block;
+      margin:0;
+      font-size:18px;
+    }
+    label{display:block;font-size:13px;margin-bottom:4px;color:var(--text-subtle);}
+    textarea,input[type="text"],input[type="number"],select{
+      width:100%;box-sizing:border-box;border-radius:10px;border:1px solid rgba(255,255,255,0.1);
+      background:radial-gradient(circle at top left,#111328,#050516);
+      color:var(--text-main);padding:8px 10px;font-size:13px;resize:vertical;min-height:36px;
+    }
+    select{
+      min-height:36px;
+      background-color:#050516;
+      color:var(--text-main);
+    }
+    textarea{font-family:monospace;min-height:60px;}
+    textarea:focus,input:focus,select:focus{
+      outline:none;border-color:var(--accent-blurple);
+      box-shadow:0 0 0 1px rgba(92,95,214,0.4);
+    }
+    button{
+      border-radius:999px;border:none;padding:8px 16px;font-size:14px;cursor:pointer;
+      margin-right:8px;margin-top:8px;
+      background:linear-gradient(135deg,var(--accent-blurple),var(--accent-gold));
+      color:#fff;font-weight:500;box-shadow:0 10px 25px rgba(0,0,0,0.55);
+      transition:transform .06s ease,box-shadow .06s ease;
+    }
+    button.secondary{
+      background:linear-gradient(135deg,#12142b,#17192f);
+      color:#e0e0eb;box-shadow:none;border:1px solid rgba(255,255,255,0.08);
+    }
+    button:active{transform:translateY(1px);box-shadow:0 4px 14px rgba(0,0,0,0.55);}
+    button:disabled{opacity:0.5;cursor:default;transform:none;box-shadow:none;}
+    .row{display:flex;flex-wrap:wrap;gap:16px;}
+    .col{flex:1 1 280px;}
+    .status{font-size:12px;color:#9ca3af;margin-top:6px;min-height:18px;}
+    hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:16px 0;}
+    .field-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    .field-inline input[type="text"]{flex:1;}
+    .mono{font-family:monospace;font-size:12px;color:#e5e7eb;}
+    .file-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;}
+    .file-name{font-size:12px;color:#d1d5db;}
+    #chatLog{
+      border-radius:10px;border:1px solid rgba(255,255,255,0.08);
+      background:radial-gradient(circle at top left,#111328,#050516);
+      min-height:80px;max-height:260px;overflow-y:auto;padding:8px 10px;
+      font-size:13px;white-space:pre-wrap;transition:border-color .15s ease,background .15s ease;
+    }
+    #chatLog.dragover{border-color:var(--accent-gold);background:radial-gradient(circle at top left,#181a35,#050516);}
+    .chat-line{margin-bottom:6px;}
+    .chat-line.me{color:var(--accent-gold);}
+    .chat-line.peer{color:#c4cffb;}
+    .chat-line.system{color:#9ca3af;font-style:italic;}
+    .chat-image{
+      display:block;max-width:50%;height:auto;margin-top:4px;
+      border-radius:8px;border:1px solid rgba(255,255,255,0.08);
+    }
+    details summary{cursor:pointer;font-size:13px;color:var(--text-subtle);margin-bottom:8px;}
+    .contacts-list{margin-top:8px;font-size:13px;max-height:160px;overflow-y:auto;}
+    .contact-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .contact-name{font-weight:500;color:#e5e7eb;}
+    .contact-handle{font-size:11px;color:#9ca3af;}
+    .contact-buttons button{margin-top:0;padding:4px 10px;font-size:11px;}
+    .ephemeral-controls{margin-top:8px;font-size:12px;color:#9ca3af;}
+    .ephemeral-controls input[type="number"]{width:80px;min-height:0;padding:4px 6px;}
+    .quickstart.hidden{display:none;}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    <span class="title-main">WHISPERNET</span>
+    <span class="title-sub">ephemeral peer-to-peer whispers</span>
+    <span class="badge">LOCAL ONLY MVP</span>
+  </h1>
+  <p class="small">
+    End-to-end encrypted chat + files/images. No central server. WebRTC + WebCrypto, all in your browser.
+  </p>
+
+  <!-- QUICK START -->
+  <div id="quickStart" class="card quickstart">
+    <p class="small">
+      <b>Quick start:</b> 1) Both sides: Generate Identity. 2) Add each other as Contacts. 3) One side creates an Invite Code and sends it. 4) Other side pastes Invite, gets Reply, sends it back. 5) Host pastes Reply. You’re connected.
+      <button id="dismissQuickStart" class="secondary" style="float:right;padding:4px 10px;font-size:11px;margin-top:0;">Got it</button>
+    </p>
+  </div>
+
+  <!-- IDENTITY -->
+  <div class="card">
+    <details open>
+      <summary><h2>Your Identity</h2></summary>
+      <p class="small">
+        Whisper ID = your encryption + signing public keys + handle. Share that, keep the file/keys to yourself.
+      </p>
+      <button id="generateKeysBtn">Generate New Identity</button>
+      <button id="saveIdentityBtn" class="secondary">Save Identity to File</button>
+      <button id="loadIdentityBtn" class="secondary">Load Identity from File</button>
+      <input type="file" id="identityFileInput" style="display:none" accept=".json" />
+      <div class="status" id="identityStatus"></div>
+
+      <div class="row" style="margin-top:10px;">
+        <div class="col">
+          <label for="displayName">Your Whisper Name:</label>
+          <div class="field-inline">
+            <input type="text" id="displayName" placeholder="e.g., Vecna, Whisper, Nightfall" />
+            <button class="secondary" id="saveProfileBtn">Save Name</button>
+          </div>
+          <label>Your Handle:</label>
+          <div class="mono" id="handleDisplay">—</div>
+        </div>
+        <div class="col">
+          <label for="yourPublicKey">Your Whisper ID (share this):</label>
+          <textarea id="yourPublicKey" readonly></textarea>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- CONTACTS -->
+  <div class="card">
+    <details open>
+      <summary><h2>Contacts</h2></summary>
+      <p class="small">
+        Save friends so you can quickly select them for chat. Stored only in this browser.
+      </p>
+      <div class="row">
+        <div class="col">
+          <label for="contactName">Contact Name:</label>
+          <input type="text" id="contactName" placeholder="e.g., Vecna" />
+        </div>
+        <div class="col">
+          <label for="contactId">Contact Whisper ID:</label>
+          <textarea id="contactId" placeholder="Paste their Whisper ID"></textarea>
+        </div>
+      </div>
+      <button id="addContactBtn">Save / Update Contact</button>
+      <div class="status" id="contactsStatus"></div>
+      <div class="contacts-list" id="contactsList"></div>
+    </details>
+  </div>
+
+  <!-- DIRECT CHAT SETUP -->
+  <div class="card">
+    <details open>
+      <summary><h2>Direct Encrypted Chat</h2></summary>
+      <p class="small">
+        1) Pick a contact. 2) One side creates an <b>Invite Code</b>, sends it. 3) The other app pastes it and generates a <b>Reply Code</b>. 4) First app pastes the reply. Host can repeat with more contacts (up to 4 total including you).
+      </p>
+      <p class="small warning">
+        Security note: your IP is visible to peers when you connect. Only whisper with people you trust. If you're unsure, use a VPN and never share personal information.
+      </p>
+
+      <label for="sessionSelect">Previous Whisper Rooms:</label>
+      <div class="field-inline">
+        <select id="sessionSelect">
+          <option value="">— Select saved room —</option>
+        </select>
+        <button id="useSessionBtn" class="secondary">Load Room</button>
+      </div>
+      <p class="small" id="sessionInfo"></p>
+
+      <label for="contactSelect">Choose Contact for This Chat:</label>
+      <select id="contactSelect">
+        <option value="">— Select contact —</option>
+      </select>
+
+      <label for="roomNickname" style="margin-top:8px;">Whisper Room Nickname (for saved sessions):</label>
+      <input type="text" id="roomNickname" placeholder="e.g., Home Game, Clan Chat" />
+
+      <label for="directPeerId" style="margin-top:8px;">Friend's Whisper ID (for this chat):</label>
+      <textarea id="directPeerId" placeholder="Select a contact above or paste their Whisper ID"></textarea>
+
+      <hr>
+
+      <h3>Step 1 (Host side): Invite Code</h3>
+      <p class="small">
+        Host: click <b>Create Invite Code</b>, send that code to your contact. Guest: paste it below.
+      </p>
+      <textarea id="inviteCode" placeholder="Host: your Invite Code appears here. Guest: paste the Invite Code you received here."></textarea>
+      <div class="field-inline">
+        <button id="createInviteBtn">Create Invite Code (I'm the host)</button>
+        <button id="useInviteBtn" class="secondary">Use Invite Code (I'm joining)</button>
+      </div>
+
+      <h3>Step 2 (Guest side): Reply Code</h3>
+      <p class="small">
+        Guest: after using the Invite Code, a <b>Reply Code</b> appears. Send it back. Host pastes it below.
+      </p>
+      <textarea id="replyCode" placeholder="Guest: your Reply Code appears here. Host: paste the Reply Code you received here."></textarea>
+      <div class="field-inline">
+        <button id="applyReplyBtn" class="secondary">Apply Reply Code (I'm the host)</button>
+      </div>
+
+      <h3>Participants</h3>
+      <p class="small">
+        Max 4 total (you + 3). Host can remove participants.
+      </p>
+      <div id="participantsList" class="small"></div>
+      <button id="addParticipantBtn" class="secondary">+ Add participant</button>
+
+      <div class="status" id="rtcStatus"></div>
+      <button id="clearPeerBtn" class="secondary">Reset Chat / Clear Connection(s)</button>
+    </details>
+  </div>
+
+  <!-- CHAT & FILES -->
+  <div class="card">
+    <details open>
+      <summary><h2>Chat & Files</h2></summary>
+
+      <label>Chat (drag & drop files/images here)</label>
+      <div id="chatLog"></div>
+
+      <div class="ephemeral-controls">
+        <label>
+          <input type="checkbox" id="ephemeralToggle" checked>
+          Auto-delete messages after
+          <input type="number" id="ephemeralSeconds" min="5" value="60">
+          seconds
+        </label>
+      </div>
+
+      <div class="field-inline" style="margin-top:8px;">
+        <input type="text" id="chatInput" placeholder="Type a message (GIF URLs auto-embed)..." />
+        <button id="sendChatBtn">Send</button>
+      </div>
+
+      <div class="file-row" style="margin-top:8px;">
+        <input type="file" id="chatFileInput" />
+        <span class="file-name" id="chatFileName">No file selected.</span>
+        <button id="sendFileBtn" class="secondary">Send File</button>
+      </div>
+      <div class="status" id="chatFileStatus"></div>
+    </details>
+  </div>
+
+  <!-- ADVANCED TOOLS -->
+  <div class="card">
+    <details>
+      <summary><h2>Advanced / Offline Tools</h2></summary>
+      <p class="small">
+        Encrypt/decrypt standalone message packets and courier files, outside of the live chat.
+      </p>
+
+      <details>
+        <summary>Encrypt / Decrypt Messages</summary>
+        <h3>Encrypt a Whisper (Message)</h3>
+        <label for="recipientPublicKey">Recipient Whisper ID:</label>
+        <textarea id="recipientPublicKey"></textarea>
+        <label for="plaintext">Message:</label>
+        <textarea id="plaintext" placeholder="Secret message..."></textarea>
+        <button id="encryptBtn">Encrypt &amp; Sign Whisper</button>
+        <div class="status" id="encryptStatus"></div>
+        <label for="ciphertext">Whisper Packet:</label>
+        <textarea id="ciphertext" readonly></textarea>
+
+        <h3>Decrypt a Whisper (Message)</h3>
+        <label for="ciphertextInput">Whisper Packet:</label>
+        <textarea id="ciphertextInput"></textarea>
+        <button id="decryptBtn">Decrypt Whisper</button>
+        <div class="status" id="decryptStatus"></div>
+        <div class="status" id="verifyInfo"></div>
+        <label for="decryptedOutput">Decrypted Message:</label>
+        <textarea id="decryptedOutput" readonly></textarea>
+      </details>
+
+      <details>
+        <summary>Encrypt / Decrypt Files</summary>
+        <h3>Encrypt a File (Courier)</h3>
+        <label for="fileRecipientPublicKey">Recipient Whisper ID:</label>
+        <textarea id="fileRecipientPublicKey"></textarea>
+        <div class="file-row">
+          <input type="file" id="fileToEncrypt" />
+          <span class="file-name" id="fileToEncryptName">No file selected.</span>
+        </div>
+        <button id="encryptFileBtn">Encrypt &amp; Sign File</button>
+        <div class="status" id="encryptFileStatus"></div>
+
+        <h3>Decrypt a File (Courier)</h3>
+        <div class="file-row">
+          <input type="file" id="encryptedFileInput" accept=".json" />
+          <span class="file-name" id="encryptedFileName">No file selected.</span>
+        </div>
+        <button id="decryptFileBtn">Decrypt File</button>
+        <div class="status" id="decryptFileStatus"></div>
+        <p class="small" id="decryptedFileInfo"></p>
+        <div class="status" id="fileVerifyInfo"></div>
+      </details>
+    </details>
+  </div>
+
+  <hr>
+  <p class="small">
+    Tip: once connected, you can collapse Identity, Contacts, and Direct Chat, leaving just the Chat & Files card visible.
+  </p>
+</div>
+
+<script>
+  // --- Basic helpers ---
+  function bufToBase64(buf){
+    const bytes=new Uint8Array(buf);let bin="";for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);return btoa(bin);
+  }
+  function base64ToBuf(b64){
+    const bin=atob(b64);const len=bin.length;const bytes=new Uint8Array(len);for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);return bytes.buffer;
+  }
+  async function exportKey(key){return crypto.subtle.exportKey("jwk",key);}
+  async function importPublicKeyFromJwk(jwk){
+    return crypto.subtle.importKey("jwk",jwk,{name:"RSA-OAEP",hash:"SHA-256"},true,["encrypt"]);
+  }
+  async function importPrivateKeyFromJwk(jwk){
+    return crypto.subtle.importKey("jwk",jwk,{name:"RSA-OAEP",hash:"SHA-256"},true,["decrypt"]);
+  }
+  async function importSigPublicKeyFromJwk(jwk){
+    return crypto.subtle.importKey("jwk",jwk,{name:"ECDSA",namedCurve:"P-256"},true,["verify"]);
+  }
+  async function importSigPrivateKeyFromJwk(jwk){
+    return crypto.subtle.importKey("jwk",jwk,{name:"ECDSA",namedCurve:"P-256"},true,["sign"]);
+  }
+  async function sha256Hex(text){
+    const enc=new TextEncoder();const data=enc.encode(text);
+    const hash=await crypto.subtle.digest("SHA-256",data);
+    const bytes=new Uint8Array(hash);let hex="";for(let i=0;i<bytes.length;i++)hex+=bytes[i].toString(16).padStart(2,"0");return hex;
+  }
+
+  // --- State ---
+  let keyPair=null;
+  let identityProfile=null;
+  let contacts=[];
+  const CHUNK_SIZE=32000;
+
+  let rtcPeer=null;
+  let rtcChannel=null;
+  let hostPeers=[];
+  let singlePeerWhisperId=null;
+  const incomingFiles={};
+  const chatMessages=[];
+  const chatLog=document.getElementById("chatLog");
+  const rtcStatus=document.getElementById("rtcStatus");
+
+  let sessions=[];
+  let currentRoomInfo=null;
+
+  const quickStart=document.getElementById("quickStart");
+  const dismissQuickStartBtn=document.getElementById("dismissQuickStart");
+
+  function hideQuickStart(){
+    if(!quickStart)return;
+    quickStart.classList.add("hidden");
+    localStorage.setItem("whispernet_quickstart_done","1");
+  }
+
+  function playNotification(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+      const ctx=new AC();const osc=ctx.createOscillator();const g=ctx.createGain();
+      osc.type="sine";osc.frequency.value=800;
+      g.gain.setValueAtTime(0,ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.2,ctx.currentTime+0.01);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.2);
+      osc.connect(g).connect(ctx.destination);
+      osc.start();osc.stop(ctx.currentTime+0.22);
+      setTimeout(()=>ctx.close&&ctx.close(),300);
+    }catch(e){}
+  }
+
+  // --- Identity + handle ---
+  async function computeHandle(sigPublicJwk,displayName){
+    const raw=JSON.stringify(sigPublicJwk);
+    const hex=await sha256Hex(raw);
+    const tag=hex.slice(0,4).toUpperCase();
+    const name=(displayName&&displayName.trim())||"user";
+    return name+"#"+tag;
+  }
+  function buildWhisperId(encPublicJwk,sigPublicJwk,handle){
+    return btoa(JSON.stringify({v:1,encPublicJwk,sigPublicJwk,handle}));
+  }
+  function parseWhisperId(idStr){
+    return JSON.parse(atob(idStr));
+  }
+
+  const generateKeysBtn=document.getElementById("generateKeysBtn");
+  const saveIdentityBtn=document.getElementById("saveIdentityBtn");
+  const loadIdentityBtn=document.getElementById("loadIdentityBtn");
+  const identityFileInput=document.getElementById("identityFileInput");
+  const identityStatus=document.getElementById("identityStatus");
+  const yourPublicKeyTextarea=document.getElementById("yourPublicKey");
+  const displayNameInput=document.getElementById("displayName");
+  const saveProfileBtn=document.getElementById("saveProfileBtn");
+  const handleDisplay=document.getElementById("handleDisplay");
+
+  async function refreshIdentityUI(){
+    if(!identityProfile||!identityProfile.encPublicJwk||!identityProfile.sigPublicJwk){
+      displayNameInput.value="";handleDisplay.textContent="—";yourPublicKeyTextarea.value="";return;
+    }
+    displayNameInput.value=identityProfile.displayName||"";
+    const handle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+    handleDisplay.textContent=handle;
+    yourPublicKeyTextarea.value=buildWhisperId(identityProfile.encPublicJwk,identityProfile.sigPublicJwk,handle);
+  }
+  async function saveIdentityProfileToLocalStorage(){
+    if(!identityProfile)return;
+    localStorage.setItem("whispernet_identity_profile_v3",JSON.stringify(identityProfile));
+  }
+  async function loadIdentityFromLocalStorage(){
+    const stored=localStorage.getItem("whispernet_identity_profile_v3");
+    if(!stored){identityStatus.textContent="No identity yet. Generate one.";return;}
+    try{
+      const obj=JSON.parse(stored);identityProfile=obj;
+      const encPublicKey=await importPublicKeyFromJwk(obj.encPublicJwk);
+      const encPrivateKey=await importPrivateKeyFromJwk(obj.encPrivateJwk);
+      const sigPublicKey=await importSigPublicKeyFromJwk(obj.sigPublicJwk);
+      const sigPrivateKey=await importSigPrivateKeyFromJwk(obj.sigPrivateJwk);
+      keyPair={encPublicKey,encPrivateKey,sigPublicKey,sigPrivateKey};
+      await refreshIdentityUI();
+      identityStatus.textContent="Identity loaded.";
+    }catch(e){console.error(e);identityStatus.textContent="Error loading identity.";}
+  }
+  async function generateIdentity(){
+    identityStatus.textContent="Generating keys...";
+    try{
+      const encKp=await crypto.subtle.generateKey(
+        {name:"RSA-OAEP",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"},
+        true,["encrypt","decrypt"]
+      );
+      const sigKp=await crypto.subtle.generateKey(
+        {name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]
+      );
+      const encPublicJwk=await exportKey(encKp.publicKey);
+      const encPrivateJwk=await exportKey(encKp.privateKey);
+      const sigPublicJwk=await exportKey(sigKp.publicKey);
+      const sigPrivateJwk=await exportKey(sigKp.privateKey);
+      identityProfile={
+        encPublicJwk,encPrivateJwk,
+        sigPublicJwk,sigPrivateJwk,
+        displayName:displayNameInput.value.trim()||""
+      };
+      keyPair={encPublicKey:encKp.publicKey,encPrivateKey:encKp.privateKey,sigPublicKey:sigKp.publicKey,sigPrivateKey:sigKp.privateKey};
+      await saveIdentityProfileToLocalStorage();
+      await refreshIdentityUI();
+      identityStatus.textContent="New identity generated.";
+      renderParticipants();
+    }catch(e){console.error(e);identityStatus.textContent="Error generating identity.";}
+  }
+  async function saveIdentityToFile(){
+    if(!identityProfile){identityStatus.textContent="Generate or load identity first.";return;}
+    try{
+      const blob=new Blob([JSON.stringify(identityProfile,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download="whispernet_identity_profile_v3.json";
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+      identityStatus.textContent="Identity saved to file.";
+    }catch(e){console.error(e);identityStatus.textContent="Error saving identity.";}
+  }
+  function triggerLoadIdentityFromFile(){identityFileInput.click();}
+  identityFileInput.addEventListener("change",async e=>{
+    const file=e.target.files[0];if(!file)return;
+    try{
+      const text=await file.text();const obj=JSON.parse(text);identityProfile=obj;
+      const encPublicKey=await importPublicKeyFromJwk(obj.encPublicJwk);
+      const encPrivateKey=await importPrivateKeyFromJwk(obj.encPrivateJwk);
+      const sigPublicKey=await importSigPublicKeyFromJwk(obj.sigPublicJwk);
+      const sigPrivateKey=await importSigPrivateKeyFromJwk(obj.sigPrivateJwk);
+      keyPair={encPublicKey,encPrivateKey,sigPublicKey,sigPrivateKey};
+      await saveIdentityProfileToLocalStorage();
+      await refreshIdentityUI();
+      identityStatus.textContent="Identity loaded from file.";
+      renderParticipants();
+    }catch(err){console.error(err);identityStatus.textContent="Error loading identity file.";}
+    finally{identityFileInput.value="";}
+  });
+  async function saveProfileName(){
+    if(!identityProfile){identityStatus.textContent="Generate an identity first.";return;}
+    identityProfile.displayName=displayNameInput.value.trim();
+    await saveIdentityProfileToLocalStorage();
+    await refreshIdentityUI();
+    identityStatus.textContent="Name updated.";
+    renderParticipants();
+  }
+
+  // --- Contacts ---
+  const contactNameInput=document.getElementById("contactName");
+  const contactIdTextarea=document.getElementById("contactId");
+  const addContactBtn=document.getElementById("addContactBtn");
+  const contactsStatus=document.getElementById("contactsStatus");
+  const contactsList=document.getElementById("contactsList");
+  const contactSelect=document.getElementById("contactSelect");
+  const directPeerIdTextarea=document.getElementById("directPeerId");
+
+  function loadContactsFromLocalStorage(){
+    try{
+      const stored=localStorage.getItem("whispernet_contacts_v2");
+      contacts=stored?JSON.parse(stored):[];
+    }catch{contacts=[];}
+    renderContacts();
+  }
+  function saveContactsToLocalStorage(){
+    localStorage.setItem("whispernet_contacts_v2",JSON.stringify(contacts));
+  }
+  function renderContacts(){
+    contactsList.innerHTML="";
+    contactSelect.innerHTML='<option value="">— Select contact —</option>';
+    if(!contacts.length){contactsList.textContent="No contacts yet.";return;}
+    contacts.forEach((c,idx)=>{
+      const item=document.createElement("div");item.className="contact-item";
+      const left=document.createElement("div");
+      const name=document.createElement("div");name.className="contact-name";name.textContent=c.name;
+      const handle=document.createElement("div");handle.className="contact-handle";handle.textContent=c.handle||"";
+      left.appendChild(name);left.appendChild(handle);
+      const right=document.createElement("div");right.className="contact-buttons";
+      const useBtn=document.createElement("button");useBtn.className="secondary";useBtn.textContent="Use";
+      useBtn.onclick=()=>{
+        directPeerIdTextarea.value=c.whisperId;
+        rtcStatus.textContent='Using contact "'+c.name+'" for this chat.';
+        preloadCodesForContact(idx);
+      };
+      const copyBtn=document.createElement("button");copyBtn.className="secondary";copyBtn.textContent="Copy ID";
+      copyBtn.onclick=async()=>{
+        try{await navigator.clipboard.writeText(c.whisperId);contactsStatus.textContent="Copied Whisper ID.";}
+        catch{contactsStatus.textContent="Could not copy; copy manually.";}
+      };
+      const delBtn=document.createElement("button");delBtn.className="secondary";delBtn.textContent="Remove";
+      delBtn.onclick=()=>{
+        contacts.splice(idx,1);saveContactsToLocalStorage();renderContacts();
+      };
+      right.appendChild(useBtn);right.appendChild(copyBtn);right.appendChild(delBtn);
+      item.appendChild(left);item.appendChild(right);contactsList.appendChild(item);
+
+      const opt=document.createElement("option");
+      opt.value=String(idx);
+      opt.textContent=c.name+(c.handle?" ("+c.handle+")":"");
+      contactSelect.appendChild(opt);
+    });
+  }
+  async function handleAddContact(){
+    const name=contactNameInput.value.trim();
+    const id=contactIdTextarea.value.trim();
+    if(!name||!id){contactsStatus.textContent="Name and Whisper ID required.";return;}
+    let handle="";
+    try{const parsed=parseWhisperId(id);handle=parsed.handle||"";}catch{}
+    const entry={name,whisperId:id,handle,meta:{}};
+    const idx=contacts.findIndex(c=>c.name.toLowerCase()===name.toLowerCase());
+    if(idx>=0){contacts[idx]=Object.assign({},contacts[idx],entry);contactsStatus.textContent="Contact updated.";}
+    else{contacts.push(entry);contactsStatus.textContent="Contact saved.";}
+    saveContactsToLocalStorage();renderContacts();
+  }
+  function preloadCodesForContact(idx){
+    const inviteCode=document.getElementById("inviteCode");
+    const replyCode=document.getElementById("replyCode");
+    const c=contacts[idx];
+    const meta=c.meta||{};
+    inviteCode.value=meta.lastInviteFromThem||meta.lastInviteFromMe||"";
+    replyCode.value=meta.lastReplyFromThem||meta.lastReplyFromMe||"";
+    if(!inviteCode.value&&!replyCode.value){
+      rtcStatus.textContent="No saved codes. Ask "+c.name+" for a fresh Invite Code.";
+    }
+  }
+  contactSelect.addEventListener("change",()=>{
+    const val=contactSelect.value;if(!val)return;
+    const idx=parseInt(val,10);if(isNaN(idx)||idx<0||idx>=contacts.length)return;
+    const c=contacts[idx];
+    directPeerIdTextarea.value=c.whisperId;
+    rtcStatus.textContent='Using contact "'+c.name+'" for this chat.';
+    preloadCodesForContact(idx);
+  });
+
+  // --- Whisper message packets ---
+  async function createWhisperMessagePacket(recipientIdStr,plaintext){
+    if(!keyPair||!keyPair.encPublicKey||!keyPair.sigPrivateKey||!identityProfile)throw new Error("missing_keys");
+    const recipientId=parseWhisperId(recipientIdStr);
+    const recipientEncKey=await importPublicKeyFromJwk(recipientId.encPublicJwk);
+    const enc=new TextEncoder();const data=enc.encode(plaintext);
+    const ciphertextBuf=await crypto.subtle.encrypt({name:"RSA-OAEP"},recipientEncKey,data);
+    const ciphertextB64=bufToBase64(ciphertextBuf);
+    const handle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+    const core={
+      v:1,type:"message",alg:"RSA-OAEP-SHA256+ECDSA-P256",
+      from:{handle,sigPublicJwk:identityProfile.sigPublicJwk},
+      ciphertext:ciphertextB64
+    };
+    const coreStr=JSON.stringify(core);
+    const coreBytes=new TextEncoder().encode(coreStr);
+    const sigBuf=await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},keyPair.sigPrivateKey,coreBytes);
+    const sigB64=bufToBase64(sigBuf);
+    return Object.assign({},core,{sig:sigB64});
+  }
+  async function verifyAndDecryptWhisperMessagePacket(packet){
+    if(!keyPair||!keyPair.encPrivateKey)throw new Error("no_private_key");
+    const res={plaintext:null,verified:false,handle:null,verifyError:null};
+    try{
+      if(packet.sig&&packet.from&&packet.from.sigPublicJwk){
+        const sigPublicKey=await importSigPublicKeyFromJwk(packet.from.sigPublicJwk);
+        const core={v:packet.v,type:packet.type,alg:packet.alg,from:packet.from,ciphertext:packet.ciphertext};
+        const coreStr=JSON.stringify(core);
+        const coreBytes=new TextEncoder().encode(coreStr);
+        const sigBuf=base64ToBuf(packet.sig);
+        const valid=await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},sigPublicKey,sigBuf,coreBytes);
+        if(valid){res.verified=true;res.handle=packet.from.handle||"Unknown";}
+        else{res.verifyError="Signature invalid";}
+      }else{res.verifyError="No signature";}
+    }catch(e){console.error(e);res.verifyError="Error verifying signature";}
+    try{
+      const ciphertextBuf=base64ToBuf(packet.ciphertext);
+      const plaintextBuf=await crypto.subtle.decrypt({name:"RSA-OAEP"},keyPair.encPrivateKey,ciphertextBuf);
+      res.plaintext=new TextDecoder().decode(plaintextBuf);
+    }catch(e){console.error(e);throw new Error("decrypt_failed");}
+    return res;
+  }
+
+  // --- Advanced message / file (offline tools) ---
+  const recipientPublicKeyTextarea=document.getElementById("recipientPublicKey");
+  const plaintextTextarea=document.getElementById("plaintext");
+  const encryptBtn=document.getElementById("encryptBtn");
+  const encryptStatus=document.getElementById("encryptStatus");
+  const ciphertextTextarea=document.getElementById("ciphertext");
+  const ciphertextInputTextarea=document.getElementById("ciphertextInput");
+  const decryptBtn=document.getElementById("decryptBtn");
+  const decryptStatus=document.getElementById("decryptStatus");
+  const verifyInfo=document.getElementById("verifyInfo");
+  const decryptedOutputTextarea=document.getElementById("decryptedOutput");
+
+  async function encryptMessage(){
+    encryptStatus.textContent="";ciphertextTextarea.value="";
+    if(!keyPair||!keyPair.encPublicKey||!keyPair.sigPrivateKey||!identityProfile){
+      encryptStatus.textContent="Generate/load identity first.";return;
+    }
+    const recipientIdStr=recipientPublicKeyTextarea.value.trim();
+    const plaintext=plaintextTextarea.value;
+    if(!recipientIdStr||!plaintext){encryptStatus.textContent="Recipient ID and message required.";return;}
+    try{
+      const packet=await createWhisperMessagePacket(recipientIdStr,plaintext);
+      ciphertextTextarea.value=JSON.stringify(packet,null,2);
+      encryptStatus.textContent="Whisper encrypted and signed.";
+    }catch(e){console.error(e);encryptStatus.textContent="Error encrypting.";}
+  }
+  async function decryptMessage(){
+    decryptStatus.textContent="";verifyInfo.textContent="";decryptedOutputTextarea.value="";
+    if(!keyPair||!keyPair.encPrivateKey){decryptStatus.textContent="Load identity first.";return;}
+    const packetStr=ciphertextInputTextarea.value.trim();
+    if(!packetStr){decryptStatus.textContent="Paste a packet first.";return;}
+    try{
+      const packet=JSON.parse(packetStr);
+      if(packet.type!=="message"||!packet.ciphertext){decryptStatus.textContent="Invalid message packet.";return;}
+      const res=await verifyAndDecryptWhisperMessagePacket(packet);
+      if(res.verified){verifyInfo.textContent="Signature valid. Sender: "+res.handle;}
+      else if(res.verifyError){verifyInfo.textContent=res.verifyError;}
+      decryptedOutputTextarea.value=res.plaintext||"";
+      decryptStatus.textContent="Decrypted.";
+    }catch(e){console.error(e);decryptStatus.textContent="Error decrypting.";}
+  }
+
+  const fileRecipientPublicKeyTextarea=document.getElementById("fileRecipientPublicKey");
+  const fileToEncryptInput=document.getElementById("fileToEncrypt");
+  const fileToEncryptName=document.getElementById("fileToEncryptName");
+  const encryptFileBtn=document.getElementById("encryptFileBtn");
+  const encryptFileStatus=document.getElementById("encryptFileStatus");
+  const encryptedFileInput=document.getElementById("encryptedFileInput");
+  const encryptedFileName=document.getElementById("encryptedFileName");
+  const decryptFileBtn=document.getElementById("decryptFileBtn");
+  const decryptFileStatus=document.getElementById("decryptFileStatus");
+  const decryptedFileInfo=document.getElementById("decryptedFileInfo");
+  const fileVerifyInfo=document.getElementById("fileVerifyInfo");
+
+  fileToEncryptInput.addEventListener("change",()=>{
+    const f=fileToEncryptInput.files[0];
+    fileToEncryptName.textContent=f?`${f.name} (${f.size} bytes)`:"No file selected.";
+  });
+  encryptedFileInput.addEventListener("change",()=>{
+    const f=encryptedFileInput.files[0];
+    encryptedFileName.textContent=f?`${f.name} (${f.size} bytes)`:"No file selected.";
+  });
+
+  async function encryptFile(){
+    encryptFileStatus.textContent="";
+    if(!keyPair||!keyPair.encPublicKey||!keyPair.sigPrivateKey||!identityProfile){
+      encryptFileStatus.textContent="Generate/load identity first.";return;
+    }
+    const recipientIdStr=fileRecipientPublicKeyTextarea.value.trim();
+    const file=fileToEncryptInput.files[0];
+    if(!recipientIdStr||!file){encryptFileStatus.textContent="Recipient ID and file required.";return;}
+    try{
+      const recipientId=parseWhisperId(recipientIdStr);
+      const recipientEncKey=await importPublicKeyFromJwk(recipientId.encPublicJwk);
+      const fileBuffer=await file.arrayBuffer();
+      const aesKey=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt","decrypt"]);
+      const iv=crypto.getRandomValues(new Uint8Array(12));
+      const ciphertextBuf=await crypto.subtle.encrypt({name:"AES-GCM",iv},aesKey,fileBuffer);
+      const rawAesKey=await crypto.subtle.exportKey("raw",aesKey);
+      const encAesKeyBuf=await crypto.subtle.encrypt({name:"RSA-OAEP"},recipientEncKey,rawAesKey);
+      const keyB64=bufToBase64(encAesKeyBuf);
+      const ivB64=bufToBase64(iv.buffer);
+      const ciphertextB64=bufToBase64(ciphertextBuf);
+      const handle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+      const core={
+        v:1,type:"file",alg:"RSA-OAEP+AES-GCM+ECDSA-P256",
+        from:{handle,sigPublicJwk:identityProfile.sigPublicJwk},
+        meta:{filename:file.name,size:file.size,mimeType:file.type||"application/octet-stream"},
+        key:keyB64,iv:ivB64,ciphertext:ciphertextB64
+      };
+      const coreStr=JSON.stringify(core);
+      const coreBytes=new TextEncoder().encode(coreStr);
+      const sigBuf=await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},keyPair.sigPrivateKey,coreBytes);
+      const sigB64=bufToBase64(sigBuf);
+      const packet=Object.assign({},core,{sig:sigB64});
+      const blob=new Blob([JSON.stringify(packet,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download=file.name+".whisper.json";
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+      encryptFileStatus.textContent="Encrypted Whisper file downloaded.";
+    }catch(e){console.error(e);encryptFileStatus.textContent="Error encrypting file.";}
+  }
+  async function decryptFile(){
+    decryptFileStatus.textContent="";decryptedFileInfo.textContent="";fileVerifyInfo.textContent="";
+    if(!keyPair||!keyPair.encPrivateKey){decryptFileStatus.textContent="Load identity first.";return;}
+    const file=encryptedFileInput.files[0];
+    if(!file){decryptFileStatus.textContent="Select an encrypted file first.";return;}
+    try{
+      const text=await file.text();const packet=JSON.parse(text);
+      if(packet.type!=="file"||!packet.key||!packet.iv||!packet.ciphertext){
+        decryptFileStatus.textContent="Invalid file packet.";return;
+      }
+      if(packet.sig&&packet.from&&packet.from.sigPublicJwk){
+        const sigPublicKey=await importSigPublicKeyFromJwk(packet.from.sigPublicJwk);
+        const core={v:packet.v,type:packet.type,alg:packet.alg,from:packet.from,meta:packet.meta,key:packet.key,iv:packet.iv,ciphertext:packet.ciphertext};
+        const coreStr=JSON.stringify(core);
+        const coreBytes=new TextEncoder().encode(coreStr);
+        const sigBuf=base64ToBuf(packet.sig);
+        const valid=await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},sigPublicKey,sigBuf,coreBytes);
+        if(valid){fileVerifyInfo.textContent="Signature valid. Sender: "+(packet.from.handle||"Unknown");}
+        else{fileVerifyInfo.textContent="Signature invalid.";}
+      }else{fileVerifyInfo.textContent="No signature."; }
+      const encKeyBuf=base64ToBuf(packet.key);
+      const ivBuf=base64ToBuf(packet.iv);
+      const ciphertextBuf=base64ToBuf(packet.ciphertext);
+      const rawAesKeyBuf=await crypto.subtle.decrypt({name:"RSA-OAEP"},keyPair.encPrivateKey,encKeyBuf);
+      const aesKey=await crypto.subtle.importKey("raw",rawAesKeyBuf,{name:"AES-GCM"},false,["decrypt"]);
+      const plaintextBuf=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(ivBuf)},aesKey,ciphertextBuf);
+      const originalName=(packet.meta&&packet.meta.filename)||"decrypted_file";
+      const mime=(packet.meta&&packet.meta.mimeType)||"application/octet-stream";
+      const outBlob=new Blob([plaintextBuf],{type:mime});
+      const url=URL.createObjectURL(outBlob);
+      const a=document.createElement("a");a.href=url;a.download=originalName;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+      decryptFileStatus.textContent="File decrypted.";decryptedFileInfo.textContent="Decrypted as: "+originalName;
+    }catch(e){console.error(e);decryptFileStatus.textContent="Error decrypting file.";}
+  }
+
+  // --- Chat + TTL + GIF parsing ---
+  const chatInput=document.getElementById("chatInput");
+  const sendChatBtn=document.getElementById("sendChatBtn");
+  const chatFileInput=document.getElementById("chatFileInput");
+  const chatFileName=document.getElementById("chatFileName");
+  const sendFileBtn=document.getElementById("sendFileBtn");
+  const chatFileStatus=document.getElementById("chatFileStatus");
+  const ephemeralToggle=document.getElementById("ephemeralToggle");
+  const ephemeralSecondsInput=document.getElementById("ephemeralSeconds");
+
+  function isGifUrl(url){
+    return /\.gif(\?|$)/i.test(url);
+  }
+  function renderMessageTextWithLinks(container,text){
+    const urlRegex=/(https?:\/\/[^\s]+)/g;
+    let lastIndex=0;let match;
+    while((match=urlRegex.exec(text))!==null){
+      const before=text.slice(lastIndex,match.index);
+      if(before)container.appendChild(document.createTextNode(before));
+      const url=match[1];
+      const a=document.createElement("a");
+      a.href=url;a.textContent=url;a.target="_blank";a.rel="noreferrer noopener";
+      a.style.color="#9dd4ff";a.style.fontSize="12px";
+      container.appendChild(a);
+      if(isGifUrl(url)){
+        const img=document.createElement("img");
+        img.src=url;img.alt="gif";img.className="chat-image";
+        container.appendChild(img);
+      }
+      lastIndex=urlRegex.lastIndex;
+    }
+    const after=text.slice(lastIndex);
+    if(after)container.appendChild(document.createTextNode(after));
+  }
+
+  function addChatEntry(el){
+    chatLog.appendChild(el);
+    chatMessages.push({element:el,createdAt:Date.now()});
+    chatLog.scrollTop=chatLog.scrollHeight;
+  }
+  function logChatLine(text,type){
+    const line=document.createElement("div");
+    line.className="chat-line "+(type||"system");
+    renderMessageTextWithLinks(line,text);
+    addChatEntry(line);
+  }
+  function logChatFileEntry(prefix,meta,url,isImage){
+    const line=document.createElement("div");
+    line.className="chat-line "+(prefix.startsWith("You")?"me":"peer");
+    const text=document.createElement("div");
+    text.textContent=`${prefix}: ${meta.filename} (${meta.size} bytes)`;
+    line.appendChild(text);
+    if(url){
+      const link=document.createElement("a");
+      link.href=url;link.download=meta.filename;link.textContent="Download";
+      link.style.fontSize="12px";link.style.display="inline-block";link.style.marginTop="2px";
+      line.appendChild(link);
+      if(isImage){
+        const img=document.createElement("img");
+        img.src=url;img.alt=meta.filename;img.className="chat-image";
+        line.appendChild(img);
+      }
+    }
+    addChatEntry(line);
+  }
+  function cleanupChatMessages(){
+    if(!ephemeralToggle.checked)return;
+    let ttl=parseInt(ephemeralSecondsInput.value,10);if(isNaN(ttl)||ttl<=0)ttl=60;
+    const cutoff=Date.now()-ttl*1000;
+    for(let i=chatMessages.length-1;i>=0;i--){
+      const e=chatMessages[i];
+      if(e.createdAt<cutoff){
+        if(e.element&&e.element.parentNode===chatLog)chatLog.removeChild(e.element);
+        chatMessages.splice(i,1);
+      }
+    }
+  }
+  setInterval(cleanupChatMessages,5000);
+
+  chatFileInput.addEventListener("change",()=>{
+    const f=chatFileInput.files[0];
+    chatFileName.textContent=f?`${f.name} (${f.size} bytes)`:"No file selected.";
+  });
+
+  // --- Sessions (rooms) ---
+  const sessionSelect=document.getElementById("sessionSelect");
+  const useSessionBtn=document.getElementById("useSessionBtn");
+  const sessionInfo=document.getElementById("sessionInfo");
+  const roomNicknameInput=document.getElementById("roomNickname");
+
+  function loadSessionsFromLocalStorage(){
+    try{
+      const s=localStorage.getItem("whispernet_sessions_v1");
+      sessions=s?JSON.parse(s):[];
+    }catch{sessions=[];}
+    renderSessions();
+  }
+  function saveSessionsToLocalStorage(){
+    localStorage.setItem("whispernet_sessions_v1",JSON.stringify(sessions));
+  }
+  function renderSessions(){
+    if(!sessionSelect)return;
+    sessionSelect.innerHTML='<option value="">— Select saved room —</option>';
+    sessions.sort((a,b)=>(b.lastUsed||0)-(a.lastUsed||0));
+    sessions.forEach((sess,idx)=>{
+      const labelPrefix=sess.roomNickname ? sess.roomNickname+" – " : "";
+      const peerLabel=sess.peerName||"peer";
+      const opt=document.createElement("option");
+      opt.value=String(idx);
+      opt.textContent=`${labelPrefix}${sess.roomId} (${sess.role} with ${peerLabel})`;
+      sessionSelect.appendChild(opt);
+    });
+  }
+  function saveCurrentRoomAsSession(){
+    if(!currentRoomInfo||!currentRoomInfo.roomId||!currentRoomInfo.peerWhisperId)return;
+    const existingIndex=sessions.findIndex(s=>
+      s.roomId===currentRoomInfo.roomId &&
+      s.role===currentRoomInfo.role &&
+      s.peerWhisperId===currentRoomInfo.peerWhisperId
+    );
+    const sess=Object.assign({},currentRoomInfo,{lastUsed:Date.now()});
+    if(existingIndex>=0)sessions[existingIndex]=sess;else sessions.push(sess);
+    saveSessionsToLocalStorage();
+    renderSessions();
+  }
+  function handleUseSession(){
+    const idx=parseInt(sessionSelect.value,10);
+    if(isNaN(idx)||idx<0||idx>=sessions.length){
+      sessionInfo.textContent="Select a saved room first.";return;
+    }
+    const sess=sessions[idx];
+    directPeerIdTextarea.value=sess.peerWhisperId;
+    roomNicknameInput.value=sess.roomNickname||"";
+    rtcStatus.textContent=`Loaded saved room ${sess.roomId} (${sess.role} with ${sess.peerName||"peer"}). Use Invite/Reply flow again to reconnect.`;
+    sessionInfo.textContent="Note: you still need to exchange a fresh Invite/Reply Code each time.";
+    currentRoomInfo=Object.assign({},sess);
+  }
+
+  // --- WebRTC helpers ---
+  function createPeerConnection(){
+    const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+    pc.oniceconnectionstatechange=()=>{rtcStatus.textContent="Connection: "+pc.iceConnectionState;};
+    pc.onconnectionstatechange=()=>{
+      rtcStatus.textContent="Connection: "+pc.connectionState;
+      if(pc.connectionState==="connected"){
+        logChatLine("Direct chat open.","system");
+        if(currentRoomInfo){saveCurrentRoomAsSession();}
+        hideQuickStart();
+      }
+      if(pc.connectionState==="failed"||pc.connectionState==="disconnected"){
+        rtcStatus.textContent+=". If it doesn't recover, ask your contact for a new Invite Code.";
+      }
+    };
+    pc.ondatachannel=e=>{
+      rtcChannel=e.channel;
+      attachDataChannelHandlers(e.channel);
+    };
+    return pc;
+  }
+  function attachDataChannelHandlers(channel){
+    channel.onopen=()=>{
+      logChatLine("Direct chat channel open.","system");
+    };
+    channel.onclose=()=>{
+      logChatLine("Direct chat channel closed.","system");
+    };
+    channel.onmessage=async e=>{
+      try{
+        const obj=JSON.parse(e.data);
+        if(obj.t==="whisper"&&obj.packet){
+          try{
+            const res=await verifyAndDecryptWhisperMessagePacket(obj.packet);
+            const who=res.handle||"friend";
+            const prefix=(res.verified?"": "[UNVERIFIED] ")+who+": ";
+            logChatLine(prefix+(res.plaintext||""),"peer");
+            playNotification();
+          }catch(err){console.error(err);logChatLine("[Error decrypting incoming message]","system");}
+        }else if(obj.t==="file-meta"&&obj.metaPacket){
+          await handleIncomingFileMeta(obj.metaPacket);
+        }else if(obj.t==="file-chunk"&&obj.chunk){
+          await handleIncomingFileChunk(obj.chunk);
+        }else{
+          logChatLine("[Unknown] "+e.data,"peer");
+        }
+      }catch{
+        logChatLine("[Raw] "+e.data,"peer");
+      }
+    };
+  }
+  function waitForIceGatheringComplete(pc){
+    if(pc.iceGatheringState==="complete")return Promise.resolve();
+    return new Promise(resolve=>{
+      function check(){
+        if(pc.iceGatheringState==="complete"){pc.removeEventListener("icegatheringstatechange",check);resolve();}
+      }
+      pc.addEventListener("icegatheringstatechange",check);
+    });
+  }
+  function generateRoomId(){
+    const words=["raven","ember","void","whisper","night","dusk","ember","hollow","vault","veil"];
+    const a=words[Math.floor(Math.random()*words.length)];
+    const b=words[Math.floor(Math.random()*words.length)];
+    const n=Math.floor(Math.random()*90+10);
+    return `${a}-${b}-${n}`;
+  }
+  function getCurrentContactIndex(){
+    const val=contactSelect.value;
+    if(!val)return -1;
+    const idx=parseInt(val,10);
+    if(isNaN(idx)||idx<0||idx>=contacts.length)return -1;
+    return idx;
+  }
+  function ensureContactMeta(idx){
+    if(idx<0||idx>=contacts.length)return null;
+    if(!contacts[idx].meta)contacts[idx].meta={};
+    return contacts[idx].meta;
+  }
+  function saveInviteMetaForCurrentContact(key,val){
+    const idx=getCurrentContactIndex();
+    if(idx<0)return;
+    const meta=ensureContactMeta(idx);
+    if(!meta)return;
+    meta[key]=val;
+    saveContactsToLocalStorage();renderContacts();
+  }
+
+  // --- Invite / Reply flow + participants ---
+  const inviteCodeTextarea=document.getElementById("inviteCode");
+  const replyCodeTextarea=document.getElementById("replyCode");
+  const createInviteBtn=document.getElementById("createInviteBtn");
+  const useInviteBtn=document.getElementById("useInviteBtn");
+  const applyReplyBtn=document.getElementById("applyReplyBtn");
+  const clearPeerBtn=document.getElementById("clearPeerBtn");
+  const participantsList=document.getElementById("participantsList");
+  const addParticipantBtn=document.getElementById("addParticipantBtn");
+
+  function renderParticipants(){
+    if(!participantsList)return;
+    participantsList.innerHTML="";
+    const youName=(identityProfile && (identityProfile.displayName||"You")) || "You";
+    const youLine=document.createElement("div");
+    youLine.textContent=youName+" (you)";
+    participantsList.appendChild(youLine);
+
+    const peers = hostPeers.length ? hostPeers : (
+      singlePeerWhisperId && currentRoomInfo ? [{
+        name: currentRoomInfo.peerName||"Peer",
+        handle: currentRoomInfo.peerHandle||"",
+        whisperId: singlePeerWhisperId,
+        pc: rtcPeer,
+        channel: rtcChannel
+      }] : []
+    );
+
+    peers.forEach((p,index)=>{
+      const row=document.createElement("div");
+      row.style.display="flex";
+      row.style.alignItems="center";
+      row.style.justifyContent="space-between";
+      row.style.gap="8px";
+      row.style.marginTop="2px";
+
+      const label=document.createElement("span");
+      label.textContent=(p.name||p.handle||"peer");
+      row.appendChild(label);
+
+      if(hostPeers.length){
+        const btn=document.createElement("button");
+        btn.textContent="Remove";
+        btn.className="secondary";
+        btn.style.padding="2px 8px";
+        btn.style.fontSize="11px";
+        btn.style.marginTop="0";
+        btn.onclick=()=>{
+          try{p.pc.close();}catch{}
+          hostPeers.splice(index,1);
+          renderParticipants();
+        };
+        row.appendChild(btn);
+      }
+      participantsList.appendChild(row);
+    });
+  }
+
+  function handleAddParticipant(){
+    rtcStatus.textContent="To add a participant, get a new Invite/Reply exchange with them and paste the Reply Code above. (Max 3 guests.)";
+    replyCodeTextarea.focus();
+  }
+
+  async function handleCreateInvite(){
+    rtcStatus.textContent="";
+    const peerId=directPeerIdTextarea.value.trim();
+    if(!peerId){rtcStatus.textContent="Select a contact or paste their Whisper ID first.";return;}
+    if(!identityProfile||!keyPair){rtcStatus.textContent="Generate/load your identity first.";return;}
+    rtcPeer=createPeerConnection();
+    rtcChannel=rtcPeer.createDataChannel("whisperchat");
+    attachDataChannelHandlers(rtcChannel);
+    try{
+      const offer=await rtcPeer.createOffer();
+      await rtcPeer.setLocalDescription(offer);
+      await waitForIceGatheringComplete(rtcPeer);
+      const sdp=rtcPeer.localDescription;
+      const roomId=generateRoomId();
+      const hostHandle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+
+      let peerName="peer";let peerHandle="";
+      try{const parsed=parseWhisperId(peerId);peerHandle=parsed.handle||"";}catch{}
+      const idx=getCurrentContactIndex();
+      if(idx>=0){
+        peerName=contacts[idx].name;
+        if(!peerHandle)peerHandle=contacts[idx].handle||"";
+      }
+
+      let nickname=roomNicknameInput.value.trim();
+      if(!nickname){
+        if(peerName && peerName!=="peer") nickname=peerName+" room";
+        else nickname="room-"+roomId;
+      }
+
+      const invite={
+        v:1,
+        kind:"invite",
+        roomId,
+        roomNickname:nickname,
+        hostHandle,
+        hostName:identityProfile.displayName||"",
+        hostWhisperId:yourPublicKeyTextarea.value.trim(),
+        sdp
+      };
+      const blob=btoa(JSON.stringify(invite));
+      inviteCodeTextarea.value=blob;
+      replyCodeTextarea.value="";
+      rtcStatus.textContent="Invite Code ready. Send it to your contact.";
+      saveInviteMetaForCurrentContact("lastInviteFromMe",blob);
+
+      currentRoomInfo={
+        roomId,
+        role:"host",
+        peerWhisperId:peerId,
+        peerName,
+        peerHandle,
+        roomNickname:nickname
+      };
+      roomNicknameInput.value=nickname;
+      renderParticipants();
+    }catch(e){console.error(e);rtcStatus.textContent="Could not create Invite Code.";}
+  }
+
+  async function handleUseInvite(){
+    rtcStatus.textContent="";
+    const blob=inviteCodeTextarea.value.trim();
+    if(!blob){rtcStatus.textContent="Paste an Invite Code first.";return;}
+    if(!identityProfile||!keyPair){rtcStatus.textContent="Generate/load your identity first.";return;}
+    try{
+      const invite=JSON.parse(atob(blob));
+      if(invite.kind!=="invite"||!invite.sdp){rtcStatus.textContent="Invalid Invite Code.";return;}
+      singlePeerWhisperId=invite.hostWhisperId||null;
+
+      if(invite.hostWhisperId){
+        const name=invite.hostName||invite.hostHandle||"Whisper contact";
+        const existingIndex=contacts.findIndex(c=>c.whisperId===invite.hostWhisperId);
+        if(existingIndex<0){
+          contacts.push({
+            name,
+            whisperId:invite.hostWhisperId,
+            handle:invite.hostHandle||"",
+            meta:{lastInviteFromThem:blob}
+          });
+          saveContactsToLocalStorage();renderContacts();
+        }
+      }
+      rtcPeer=createPeerConnection();
+      await rtcPeer.setRemoteDescription(invite.sdp);
+      const answer=await rtcPeer.createAnswer();
+      await rtcPeer.setLocalDescription(answer);
+      await waitForIceGatheringComplete(rtcPeer);
+      const sdp=rtcPeer.localDescription;
+      const guestHandle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+
+      const roomId=invite.roomId;
+      let nickname=roomNicknameInput.value.trim() || invite.roomNickname ||
+        (invite.hostName ? invite.hostName+" room" : "room-"+roomId);
+
+      const reply={
+        v:1,
+        kind:"reply",
+        roomId,
+        guestHandle,
+        guestName:identityProfile.displayName||"",
+        guestWhisperId:yourPublicKeyTextarea.value.trim(),
+        sdp
+      };
+      const replyBlob=btoa(JSON.stringify(reply));
+      replyCodeTextarea.value=replyBlob;
+      rtcStatus.textContent="Reply Code ready. Send it back to the host.";
+      saveInviteMetaForCurrentContact("lastInviteFromThem",blob);
+      saveInviteMetaForCurrentContact("lastReplyFromMe",replyBlob);
+
+      currentRoomInfo={
+        roomId,
+        role:"guest",
+        peerWhisperId:invite.hostWhisperId||"",
+        peerName:invite.hostName||"Host",
+        peerHandle:invite.hostHandle||"",
+        roomNickname:nickname
+      };
+      roomNicknameInput.value=nickname;
+      renderParticipants();
+    }catch(e){console.error(e);rtcStatus.textContent="Could not use Invite Code.";}
+  }
+
+  async function handleApplyReply(){
+    rtcStatus.textContent="";
+    const blob=replyCodeTextarea.value.trim();
+    if(!blob){rtcStatus.textContent="Paste a Reply Code from your contact.";return;}
+    if(!rtcPeer){rtcStatus.textContent="Create an Invite Code first, then apply the Reply Code.";return;}
+    const MAX_GUESTS=3;
+    if(hostPeers.length>=MAX_GUESTS){
+      rtcStatus.textContent="Room is full (max 4 including you).";return;
+    }
+    try{
+      const reply=JSON.parse(atob(blob));
+      if(reply.kind!=="reply"||!reply.sdp){rtcStatus.textContent="Invalid Reply Code.";return;}
+      await rtcPeer.setRemoteDescription(reply.sdp);
+      rtcStatus.textContent="Reply applied. Waiting for connection...";
+      saveInviteMetaForCurrentContact("lastReplyFromThem",blob);
+
+      const peerEntry={
+        name:reply.guestName||reply.guestHandle||"Guest",
+        whisperId:reply.guestWhisperId||"",
+        handle:reply.guestHandle||"",
+        pc:rtcPeer,
+        channel:rtcChannel,
+        roomId:reply.roomId|| (currentRoomInfo && currentRoomInfo.roomId) || generateRoomId()
+      };
+      hostPeers.push(peerEntry);
+
+      let nickname=roomNicknameInput.value.trim() ||
+        (currentRoomInfo && currentRoomInfo.roomNickname) ||
+        (peerEntry.name ? peerEntry.name+" room" : "room-"+peerEntry.roomId);
+
+      currentRoomInfo={
+        roomId:peerEntry.roomId,
+        role:"host",
+        peerWhisperId:peerEntry.whisperId,
+        peerName:peerEntry.name,
+        peerHandle:peerEntry.handle,
+        roomNickname:nickname
+      };
+      roomNicknameInput.value=nickname;
+      saveCurrentRoomAsSession();
+      renderParticipants();
+    }catch(e){console.error(e);rtcStatus.textContent="Could not apply Reply Code.";}
+  }
+
+  function handleClearPeer(){
+    try{
+      if(rtcPeer){rtcPeer.close();}
+    }catch{}
+    rtcPeer=null;rtcChannel=null;
+    hostPeers.forEach(p=>{try{p.pc.close();}catch{}});
+    hostPeers=[];
+    singlePeerWhisperId=null;
+    inviteCodeTextarea.value="";replyCodeTextarea.value="";
+    for(const k in incomingFiles)delete incomingFiles[k];
+    chatLog.innerHTML="";chatMessages.length=0;
+    currentRoomInfo=null;
+    logChatLine("Chat reset. Use Invite/Reply flow to connect again.","system");
+    rtcStatus.textContent="Chat reset.";
+    renderParticipants();
+  }
+
+  function getActiveChannels(){
+    const list=[];
+    for(const p of hostPeers){
+      if(p.channel && p.channel.readyState==="open" && p.whisperId){
+        list.push({channel:p.channel, whisperId:p.whisperId, name:p.name||p.handle||"peer"});
+      }
+    }
+    if(list.length>0)return list;
+    if(rtcChannel && rtcChannel.readyState==="open" && singlePeerWhisperId){
+      list.push({channel:rtcChannel,whisperId:singlePeerWhisperId,name:"peer"});
+    }
+    return list;
+  }
+
+  async function handleSendChat(){
+    const text=chatInput.value.trim();if(!text)return;
+    const targets=getActiveChannels();
+    if(!targets.length){
+      logChatLine("Chat not ready. Complete Invite/Reply steps and ensure channel is open.","system");
+      return;
+    }
+    if(!identityProfile||!keyPair){
+      logChatLine("Load your identity first.","system");
+      return;
+    }
+    try{
+      for(const t of targets){
+        const packet=await createWhisperMessagePacket(t.whisperId,text);
+        t.channel.send(JSON.stringify({t:"whisper",packet}));
+      }
+      let handle="me";try{handle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);}catch{}
+      logChatLine(`You (${handle}): `+text,"me");
+      chatInput.value="";
+    }catch(e){console.error(e);logChatLine("Error sending message.","system");}
+  }
+
+  function generateFileId(){
+    const b=new Uint8Array(8);crypto.getRandomValues(b);let hex="";for(let i=0;i<b.length;i++)hex+=b[i].toString(16).padStart(2,"0");return hex;
+  }
+
+  async function sendFileOverChat(file){
+    chatFileStatus.textContent="";
+    if(!file){chatFileStatus.textContent="Select or drop a file first.";return;}
+    const targets=getActiveChannels();
+    if(!targets.length){chatFileStatus.textContent="Chat not ready.";return;}
+    if(!identityProfile||!keyPair){chatFileStatus.textContent="Load identity first.";return;}
+    try{
+      for(const t of targets){
+        const recipientId=parseWhisperId(t.whisperId);
+        const recipientEncKey=await importPublicKeyFromJwk(recipientId.encPublicJwk);
+        const fileBuffer=await file.arrayBuffer();
+        const aesKey=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt","decrypt"]);
+        const iv=crypto.getRandomValues(new Uint8Array(12));
+        const ciphertextBuf=await crypto.subtle.encrypt({name:"AES-GCM",iv},aesKey,fileBuffer);
+        const rawAesKey=await crypto.subtle.exportKey("raw",aesKey);
+        const encAesKeyBuf=await crypto.subtle.encrypt({name:"RSA-OAEP"},recipientEncKey,rawAesKey);
+        const keyB64=bufToBase64(encAesKeyBuf);
+        const ivB64=bufToBase64(iv.buffer);
+        const ciphertextB64=bufToBase64(ciphertextBuf);
+        const handle=await computeHandle(identityProfile.sigPublicJwk,identityProfile.displayName);
+        const fileId=generateFileId();
+        const totalChunks=Math.ceil(ciphertextB64.length/CHUNK_SIZE);
+        const meta={filename:file.name,size:file.size,mimeType:file.type||"application/octet-stream",fileId,totalChunks};
+        const coreMeta={
+          v:1,type:"file-meta",alg:"RSA-OAEP+AES-GCM+ECDSA-P256",
+          from:{handle,sigPublicJwk:identityProfile.sigPublicJwk},
+          meta,key:keyB64,iv:ivB64
+        };
+        const coreMetaStr=JSON.stringify(coreMeta);
+        const coreMetaBytes=new TextEncoder().encode(coreMetaStr);
+        const sigBuf=await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},keyPair.sigPrivateKey,coreMetaBytes);
+        const sigB64=bufToBase64(sigBuf);
+        const metaPacket=Object.assign({},coreMeta,{sig:sigB64});
+        t.channel.send(JSON.stringify({t:"file-meta",metaPacket}));
+        for(let i=0;i<totalChunks;i++){
+          const start=i*CHUNK_SIZE;const end=start+CHUNK_SIZE;
+          const chunkStr=ciphertextB64.slice(start,end);
+          t.channel.send(JSON.stringify({t:"file-chunk",chunk:{v:1,type:"file-chunk",fileId,index:i,data:chunkStr}}));
+        }
+      }
+      chatFileStatus.textContent="File sent (encrypted) to all connected peers.";
+      const localUrl=URL.createObjectURL(file);
+      logChatFileEntry("You sent a file",{filename:file.name,size:file.size},localUrl,file.type.startsWith("image/"));
+    }catch(e){console.error(e);chatFileStatus.textContent="Error sending file.";}
+  }
+
+  async function handleIncomingFileMeta(metaPacket){
+    const meta=metaPacket.meta;const fileId=meta&&meta.fileId;if(!fileId)return;
+    incomingFiles[fileId]={metaPacket,chunks:new Array(meta.totalChunks).fill(null),received:0};
+    logChatLine(`Receiving file from ${(metaPacket.from.handle||"friend")}: ${meta.filename} (${meta.size} bytes, ${meta.totalChunks} chunks)`,"system");
+  }
+  async function handleIncomingFileChunk(chunk){
+    const fileId=chunk.fileId;if(!fileId||!(fileId in incomingFiles))return;
+    const entry=incomingFiles[fileId];
+    if(entry.chunks[chunk.index]===null){
+      entry.chunks[chunk.index]=chunk.data;entry.received++;
+      if(entry.received===entry.metaPacket.meta.totalChunks)await finalizeIncomingFile(fileId);
+    }
+  }
+  async function finalizeIncomingFile(fileId){
+    const entry=incomingFiles[fileId];if(!entry)return;
+    const metaPacket=entry.metaPacket;const meta=metaPacket.meta;
+    let verified=false;
+    try{
+      if(metaPacket.sig&&metaPacket.from&&metaPacket.from.sigPublicJwk){
+        const sigPublicKey=await importSigPublicKeyFromJwk(metaPacket.from.sigPublicJwk);
+        const core={v:metaPacket.v,type:metaPacket.type,alg:metaPacket.alg,from:metaPacket.from,meta:metaPacket.meta,key:metaPacket.key,iv:metaPacket.iv};
+        const coreStr=JSON.stringify(core);
+        const coreBytes=new TextEncoder().encode(coreStr);
+        const sigBuf=base64ToBuf(metaPacket.sig);
+        verified=await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},sigPublicKey,sigBuf,coreBytes);
+      }
+    }catch(e){console.error(e);}
+    try{
+      const b64=entry.chunks.join("");
+      const ciphertextBuf=base64ToBuf(b64);
+      const encKeyBuf=base64ToBuf(metaPacket.key);
+      const ivBuf=base64ToBuf(metaPacket.iv);
+      const rawAesKeyBuf=await crypto.subtle.decrypt({name:"RSA-OAEP"},keyPair.encPrivateKey,encKeyBuf);
+      const aesKey=await crypto.subtle.importKey("raw",rawAesKeyBuf,{name:"AES-GCM"},false,["decrypt"]);
+      const plaintextBuf=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(ivBuf)},aesKey,ciphertextBuf);
+      const mime=meta.mimeType||"application/octet-stream";
+      const outBlob=new Blob([plaintextBuf],{type:mime});
+      const url=URL.createObjectURL(outBlob);
+      const fromHandle=metaPacket.from.handle||"friend";
+      const prefix=(verified?"":"[UNVERIFIED] ")+fromHandle+" sent you a file";
+      const isImage=mime.startsWith("image/");
+      logChatFileEntry(prefix,meta,url,isImage);
+      playNotification();
+      delete incomingFiles[fileId];
+    }catch(e){console.error(e);logChatLine("[Error decrypting incoming file]","system");delete incomingFiles[fileId];}
+  }
+
+  // Drag & drop into chat
+  chatLog.addEventListener("dragover",e=>{e.preventDefault();chatLog.classList.add("dragover");});
+  chatLog.addEventListener("dragleave",e=>{e.preventDefault();chatLog.classList.remove("dragover");});
+  chatLog.addEventListener("drop",e=>{
+    e.preventDefault();chatLog.classList.remove("dragover");
+    const files=e.dataTransfer.files;if(!files||!files.length)return;
+    for(const f of files)sendFileOverChat(f);
+  });
+
+  // Event wiring
+  generateKeysBtn.addEventListener("click",generateIdentity);
+  saveIdentityBtn.addEventListener("click",saveIdentityToFile);
+  loadIdentityBtn.addEventListener("click",triggerLoadIdentityFromFile);
+  saveProfileBtn.addEventListener("click",saveProfileName);
+  encryptBtn.addEventListener("click",encryptMessage);
+  decryptBtn.addEventListener("click",decryptMessage);
+  encryptFileBtn.addEventListener("click",encryptFile);
+  decryptFileBtn.addEventListener("click",decryptFile);
+  addContactBtn.addEventListener("click",handleAddContact);
+  createInviteBtn.addEventListener("click",handleCreateInvite);
+  useInviteBtn.addEventListener("click",handleUseInvite);
+  applyReplyBtn.addEventListener("click",handleApplyReply);
+  clearPeerBtn.addEventListener("click",handleClearPeer);
+  sendChatBtn.addEventListener("click",handleSendChat);
+  chatInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();handleSendChat();}
+  });
+  sendFileBtn.addEventListener("click",()=>{
+    const f=chatFileInput.files[0];sendFileOverChat(f);
+    chatFileInput.value="";chatFileName.textContent="No file selected.";
+  });
+  useSessionBtn.addEventListener("click",handleUseSession);
+  addParticipantBtn.addEventListener("click",handleAddParticipant);
+  dismissQuickStartBtn.addEventListener("click",hideQuickStart);
+
+  window.addEventListener("load",()=>{
+    if(localStorage.getItem("whispernet_quickstart_done")==="1"){
+      hideQuickStart();
+    }
+    loadIdentityFromLocalStorage();
+    loadContactsFromLocalStorage();
+    loadSessionsFromLocalStorage();
+    renderParticipants();
+    logChatLine(
+      "Basic flow: 1) Both generate identities + add each other as contacts. "+
+      "2) Host creates Invite Code and sends it. 3) Guest pastes Invite Code, gets Reply Code back. "+
+      "4) Host pastes Reply Code. Host can repeat with more contacts (max 3 guests). "+
+      "GIF URLs in messages auto-embed for everyone.","system"
+    );
+  });
+</script>
+</body>
+</html>
